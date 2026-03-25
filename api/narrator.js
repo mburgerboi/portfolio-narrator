@@ -5,30 +5,30 @@ export const config = {
 };
 
 export default async function handler(req, res) {
+  // Allow requests from your custom domain and the default Vercel URL
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   let body = req.body;
-
-  // If body is a string (unparsed), parse it manually
   if (typeof body === "string") {
-    try {
-      body = JSON.parse(body);
-    } catch (e) {
+    try { body = JSON.parse(body); } catch (e) {
       return res.status(400).json({ error: "Invalid JSON body" });
     }
   }
-
-  // If body is still empty, read it from the raw stream
   if (!body) {
     const chunks = [];
-    for await (const chunk of req) {
-      chunks.push(chunk);
-    }
-    try {
-      body = JSON.parse(Buffer.concat(chunks).toString());
-    } catch (e) {
+    for await (const chunk of req) chunks.push(chunk);
+    try { body = JSON.parse(Buffer.concat(chunks).toString()); } catch (e) {
       return res.status(400).json({ error: "Could not parse request body" });
     }
   }
